@@ -28,7 +28,9 @@ jobs:
         run: flutter pub get
 
       - name: 静态分析
-        run: flutter analyze
+        # Flutter 3.50 将 info 级提示（如 flutter/material.dart 弃用）也视为 fatal，
+        # 这里仅对 error/warning 失败，info 仍会显示但不阻断 CI。
+        run: flutter analyze --no-fatal-infos
 
       - name: 运行单元测试
         run: flutter test
