@@ -1,0 +1,11 @@
+# 统一以 LF 换行，避免跨平台差异
+* text=auto eol=lf
+
+# 二进制资源保持原样，不转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.jks binary
+*.keystore binary
+*.zip binary

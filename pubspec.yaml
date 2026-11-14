@@ -1,0 +1,30 @@
+name: flutter_todo_app
+description: "带账号登录与本地存储的待办清单 App（Flutter / Android + iOS）"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  shared_preferences: ^2.2.3
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+  crypto: ^3.0.3
+  path_provider: ^2.1.1
+  # 导入备份时挑选本地 JSON 文件（13.x 适配 Flutter 3.50 的 compileSdk 要求）
+  file_picker: ^13.0.0
+  flutter_local_notifications: ^17.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  test: ^1.32.0
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
