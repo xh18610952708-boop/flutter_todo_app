@@ -59,6 +59,8 @@ void main() {
     });
 
     test('密码错误登录失败', () async {
+      // setUp 的 register 会自动登录成 carol；先退出，才能验证「失败登录不会让人登录」
+      await AuthService.instance.logout();
       final err = await AuthService.instance.login('carol', 'wrong99');
       expect(err, contains('密码不正确'));
       expect(await AuthService.instance.currentUser(), isNull);
