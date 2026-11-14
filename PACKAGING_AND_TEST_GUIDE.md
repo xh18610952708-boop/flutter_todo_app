@@ -185,13 +185,59 @@ flutter build apk --release
 
 ---
 
-## 十、CI 自动测试（GitHub Actions）
+## 十、推送到 GitHub（含 CI 触发）
 
-仓库根目录新增 `.github/workflows/flutter-ci.yml`：推送 / PR 时自动在 `ubuntu-latest` 跑 `flutter pub get` → `flutter analyze` → `flutter test`。
+本项目已托管在 `https://github.com/xh18610952708-boop/flutter_todo_app`（公开仓库，默认分支 `main`），本机 `origin` 远端已配好。日常推送只需两步。
+
+### 在你自己的 Windows 电脑上
+
+> 用 **Git Bash**（开始菜单搜「Git Bash」）执行，不要用系统 `cmd.exe`（默认没有 git，且要 `cd` 到项目目录）。仓库在 `D:/WorkBuddy/flutter_todo_app`。
+
+**首次推送（仓库已建好，只需关联远端并推送）**
+```bash
+cd /d/WorkBuddy/flutter_todo_app
+git remote -v                      # 本机已配好 origin，可跳过下面两行
+git remote add origin https://github.com/xh18610952708-boop/flutter_todo_app.git
+git push -u origin main
+```
+首次推送时 Git Credential Manager 会弹浏览器登录 GitHub，登录后令牌被缓存，之后无需再登。
+
+**日常提交 + 推送**
+```bash
+cd /d/WorkBuddy/flutter_todo_app
+git add -A
+git commit -m "你的改动说明"
+git push                          # 已设 upstream，直接 push 即可
+```
+
+**从零新建仓库再推送（想重新建仓时）**
+1. GitHub 网页 → 右上角 `+` → New repository → 名字 `flutter_todo_app`，**不要**勾 Add a README（保持空仓库）→ Create。
+2. 本地：
+```bash
+git remote add origin https://github.com/<你的用户名>/flutter_todo_app.git
+git push -u origin main
+```
+
+### 关于 PAT 与 CI 触发（重要）
+- 用 **PAT（个人访问令牌）** 推送 Actions 工作流文件（`.github/workflows/*.yml`）时，令牌必须**额外勾选 `workflow` 作用域**——光有 `repo` 不够，否则整批推送会被
+  `refusing to allow ... to create or update workflow ... without workflow scope` 拒绝。
+- 你机器上日常推送走 Git Credential Manager 浏览器登录，**不需要 PAT**。PAT 只在临时脚本里用，用完应立即在 GitHub 撤销。
+- 代码推到 GitHub 后，`.github/workflows/flutter-ci.yml` 会在每次 push / PR 自动跑 `flutter analyze` + `flutter test`（见下一节）。
+
+### 已修复的两个 CI 红因（备查）
+1. **Flutter 3.50 的 `flutter analyze` 把 info 级弃用提示当 fatal**（exit 1，典型为 `package:flutter/material.dart` 被框架建议改用 `material_ui`）。CI 命令已改为 `flutter analyze --no-fatal-infos`：`error/warning` 仍阻断构建，info 不阻断。
+2. **`auth_service_test` 的「密码错误登录失败」用例原本写错**：`setUp` 的 `register` 会自动登录成 `carol`，用例却断言失败登录后 `currentUser` 为 null（实际仍是 `carol`）。已改为先 `logout()` 再验证，应用逻辑未动。
+
+---
+
+## 十一、CI 自动测试（GitHub Actions）
+
+仓库根目录新增 `.github/workflows/flutter-ci.yml`：推送 / PR 时自动在 `ubuntu-latest` 跑 `flutter pub get` → `flutter analyze --no-fatal-infos` → `flutter test`。
 
 - 跑在 Linux，无需 Windows C++ 工具链，因此连 `auth_service_test`（依赖 flutter 引擎）也能跑全。
-- 用法：把项目推到 GitHub 仓库即可生效；本地无需任何额外操作。
+- 用法：把项目推到 GitHub 仓库即可生效（见上一节）；本地无需任何额外操作。
 - Flutter 版本固定 `3.50.0`（`stable`），与本地一致。
+- 跑完状态可在 `https://github.com/xh18610952708-boop/flutter_todo_app/actions` 查看；README 顶部徽章随结果变绿 / 红。
 
 ---
 *最后更新：2026-11-14*
