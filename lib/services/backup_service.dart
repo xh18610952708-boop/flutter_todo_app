@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/todo.dart';
+import 'auth_service.dart';
 import 'todo_repository.dart';
 
 /// 备份 / 恢复：把当前账号的待办导出成 JSON 文件，或导入还原。
@@ -29,6 +30,36 @@ class BackupService {
         .replaceAll(':', '-')
         .replaceAll('.', '_');
     final file = File('${dir.path}/todo_backup_${owner}_$stamp.json');
+    await file.writeAsString(jsonEncode(payload), flush: true);
+    return file.path;
+  }
+
+  /// 一键导出本机全部账号及各自待办，合并成一个 JSON 文件。
+  /// 结构：{ app, version, mode:'all_accounts', exportedAt, accounts:[ {owner, items:[...]}, ... ] }
+  /// 返回文件路径。即使某个账号没有待办也会照常列出来（items 为空数组）。
+  Future<String> exportAllJson() async {
+    final usernames = await AuthService.instance.allUsernames();
+    final accounts = <Map<String, Object?>>[];
+    for (final String u in usernames) {
+      final items = await TodoRepository.instance.list(u);
+      accounts.add(<String, Object?>{
+        'owner': u,
+        'items': items.map((Todo t) => t.toMap()).toList(),
+      });
+    }
+    final payload = <String, Object?>{
+      'app': 'flutter_todo_app',
+      'version': 1,
+      'mode': 'all_accounts',
+      'exportedAt': DateTime.now().toIso8601String(),
+      'accounts': accounts,
+    };
+    final dir = await getApplicationDocumentsDirectory();
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .replaceAll('.', '_');
+    final file = File('${dir.path}/todo_backup_ALL_$stamp.json');
     await file.writeAsString(jsonEncode(payload), flush: true);
     return file.path;
   }

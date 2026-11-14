@@ -212,6 +212,17 @@ class _TodoListPageState extends State<TodoListPage> {
     }
   }
 
+  Future<void> _exportAll() async {
+    try {
+      final path = await BackupService.instance.exportAllJson();
+      if (!mounted) return;
+      _toast('已导出全部账号备份到：\n$path');
+    } catch (e) {
+      if (!mounted) return;
+      _toast('导出失败：$e');
+    }
+  }
+
   Future<void> _import() async {
     try {
       final count = await BackupService.instance.importJson(widget.username);
@@ -345,12 +356,15 @@ class _TodoListPageState extends State<TodoListPage> {
             onSelected: (String value) {
               if (value == 'clear') _clearDone();
               if (value == 'export') _export();
+              if (value == 'exportAll') _exportAll();
               if (value == 'import') _import();
               if (value == 'theme') _chooseTheme();
               if (value == 'logout') _logout();
             },
             itemBuilder: (_) => const <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(value: 'export', child: Text('导出备份')),
+              PopupMenuItem<String>(value: 'export', child: Text('导出当前账号')),
+              PopupMenuItem<String>(
+                  value: 'exportAll', child: Text('导出全部账号')),
               PopupMenuItem<String>(value: 'import', child: Text('导入备份')),
               PopupMenuItem<String>(value: 'theme', child: Text('主题外观')),
               PopupMenuItem<String>(value: 'clear', child: Text('清空已完成')),

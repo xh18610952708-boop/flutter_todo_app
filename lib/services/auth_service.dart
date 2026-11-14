@@ -85,4 +85,10 @@ class AuthService {
   Future<void> logout() async {
     await (await _prefs).remove(_kCurrent);
   }
+
+  /// 枚举本机注册过的全部账号名（不含密码信息），用于「一键导出全部账号」。
+  Future<List<String>> allUsernames() async {
+    final users = await _readUsers();
+    return users.keys.toList();
+  }
 }
