@@ -88,6 +88,19 @@ class TodoRepository {
     return todo.copyWith(id: id);
   }
 
+  /// 按 id 取单条待办（带 owner 校验，跨账号取不到）。取不到返回 null。
+  Future<Todo?> getById(int id, String owner) async {
+    final Database db = await _db;
+    final List<Map<String, Object?>> rows = await db.query(
+      Todo.table,
+      where: '${Todo.colId} = ? AND ${Todo.colOwner} = ?',
+      whereArgs: <Object?>[id, owner],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return Todo.fromMap(rows.first);
+  }
+
   Future<void> update(Todo todo) async {
     final Database db = await _db;
     await db.update(

@@ -11,6 +11,10 @@ class NotifyService {
 
   bool _ready = false;
 
+  /// 点击通知时的回调：传入通知 payload 里的待办 id（没有则为 null）。
+  /// 由待办列表页在 init 时注册、dispose 时清空，避免持有过期 context。
+  void Function(int? todoId)? onTapOpenTodo;
+
   /// 初始化插件（Android 用小图标 app_icon，纯矢量 drawable，无需二进制资源）。
   Future<void> init() async {
     if (_ready) return;
@@ -19,7 +23,10 @@ class NotifyService {
       const ios = DarwinInitializationSettings();
       await _plugin.initialize(
         const InitializationSettings(android: android, iOS: ios),
-        onDidReceiveNotificationResponse: (_) {},
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          final id = int.tryParse(response.payload ?? '');
+          onTapOpenTodo?.call(id);
+        },
       );
       _ready = true;
     } catch (_) {
@@ -40,9 +47,12 @@ class NotifyService {
   }
 
   /// 发一条「待办到期提醒」汇总通知。overdue/duetoday 为数量。
+  /// [focusTodoId] 为「最紧急待办」的 id，写入通知 payload；
+  /// 用户点击通知时会把它带回，便于直接打开对应待办。
   Future<void> showDueSummary({
     required int overdue,
     required int dueToday,
+    int? focusTodoId,
   }) async {
     if (!_ready) return;
     if (overdue == 0 && dueToday == 0) return;
@@ -68,6 +78,7 @@ class NotifyService {
         '待办提醒',
         '$buffer，记得及时处理～',
         details,
+        payload: focusTodoId?.toString(),
       );
     } catch (_) {
       // 发通知失败不影响使用

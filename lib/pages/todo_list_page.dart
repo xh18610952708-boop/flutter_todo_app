@@ -39,12 +39,28 @@ class _TodoListPageState extends State<TodoListPage> {
     super.initState();
     _load();
     _notifyDueOnce();
+    // 注册「点击通知打开对应待办」回调；dispose 时清掉，避免持有过期 context
+    NotifyService.instance.onTapOpenTodo = _openTodoFromNotification;
   }
 
   @override
   void dispose() {
+    // 单订阅模式：本页是唯一注册者，离开时无条件清掉，避免持有过期 context
+    NotifyService.instance.onTapOpenTodo = null;
     _keywordCtrl.dispose();
     super.dispose();
+  }
+
+  /// 通知点击后：按 id 取出该待办并打开编辑页（定位到具体项）。
+  Future<void> _openTodoFromNotification(int? id) async {
+    if (id == null) return;
+    try {
+      final todo = await TodoRepository.instance.getById(id, widget.username);
+      if (todo == null || !mounted) return;
+      await _openEditor(todo);
+    } catch (_) {
+      // 取不到就忽略，不影响主流程
+    }
   }
 
   Future<void> _load() async {
@@ -85,18 +101,26 @@ class _TodoListPageState extends State<TodoListPage> {
       final today = DateTime(now.year, now.month, now.day);
       int overdue = 0;
       int dueToday = 0;
+      Todo? focus;
       for (final t in active) {
         if (t.dueAt == null) continue;
         final due = DateTime(t.dueAt!.year, t.dueAt!.month, t.dueAt!.day);
         if (due.isBefore(today)) {
           overdue++;
+          if (focus == null ||
+              due.isBefore(
+                  DateTime(focus.dueAt!.year, focus.dueAt!.month, focus.dueAt!.day))) {
+            focus = t;
+          }
         } else if (due.isAtSameMomentAs(today)) {
           dueToday++;
+          focus ??= t;
         }
       }
       await NotifyService.instance.showDueSummary(
         overdue: overdue,
         dueToday: dueToday,
+        focusTodoId: focus?.id,
       );
     } catch (_) {
       // 通知失败不影响主流程
